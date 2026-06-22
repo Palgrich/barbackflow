@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BarBackFlow — Bar Operations, Simplified</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F3F1EC;
+  --ink: #111111;
+  --ink2: #5A5A5A;
+  --ink3: #999;
+  --accent: #1A5F7A;
+  --accent-light: #E4F0F5;
+  --surface: #FFFFFF;
+  --border: #DDD9D3;
+  --app-bg: #141414;
+  --app-bg2: #1E1E1E;
+  --app-bd: rgba(255,255,255,.1);
+  --app-ink: #F0F0F0;
+  --app-ink2: #aaa;
+  --app-accent: #B87215;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(243,241,236,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+.nav-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-brand span { color: var(--accent); }
+.nav-cta {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 20px;
+  border-radius: 99px;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.nav-cta:hover { opacity: .8; }
+
+/* ── HERO ── */
+.hero {
+  padding: 96px 5% 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  display: inline-block;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 5px 12px;
+  border-radius: 99px;
+  margin-bottom: 28px;
+}
+.hero h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(38px, 6vw, 68px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -.03em;
+  color: var(--ink);
+  max-width: 800px;
+  margin-bottom: 24px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+.hero-sub {
+  font-size: 18px;
+  color: var(--ink2);
+  max-width: 560px;
+  margin-bottom: 44px;
+  line-height: 1.65;
+}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px 28px;
+  border-radius: 99px;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.btn-primary:hover { opacity: .8; }
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px 28px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  text-decoration: none;
+  transition: border-color .15s;
+}
+.btn-secondary:hover { border-color: var(--ink); }
+
+/* ── FLOW STRIP ── */
+.flow-strip {
+  margin-top: 72px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+.flow-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+.flow-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  right: 0;
+  width: calc(100% - 120px);
+  left: 120px;
+  height: 1px;
+  background: var(--border);
+}
+.flow-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all .4s;
+  position: relative;
+  z-index: 1;
+}
+.flow-step.active .flow-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 6px rgba(26,95,122,.12);
+}
+.flow-step-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink3);
+  transition: color .4s;
+}
+.flow-step.active .flow-step-label { color: var(--ink); }
+.flow-step-desc {
+  font-size: 12px;
+  color: var(--ink3);
+  max-width: 140px;
+}
+
+/* ── SECTION SHARED ── */
+section {
+  padding: 96px 5%;
+}
+.section-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.section-eyebrow {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.section-sub {
+  font-size: 17px;
+  color: var(--ink2);
+  max-width: 520px;
+  line-height: 1.65;
+  margin-bottom: 56px;
+}
+
+/* ── FEATURES ── */
+#features { background: var(--surface); }
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.feat-card {
+  padding: 36px 32px;
+  background: var(--surface);
+  transition: background .2s;
+}
+.feat-card:hover { background: var(--bg); }
+.feat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+.feat-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: -.01em;
+}
+.feat-body {
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.65;
+}
+
+/* ── SCREENS ── */
+#screens { background: var(--ink); }
+#screens .section-eyebrow { color: rgba(255,255,255,.5); }
+#screens .section-title { color: #fff; }
+#screens .section-sub { color: rgba(255,255,255,.5); }
+
+.screens-wrap {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.screen-block {
+  flex-shrink: 0;
+}
+.screen-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.35);
+  margin-bottom: 14px;
+}
+
+/* Phone frame */
+.phone {
+  width: 240px;
+  background: #000;
+  border-radius: 36px;
+  padding: 14px;
+  box-shadow: 0 40px 80px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.08);
+  position: relative;
+}
+.phone-notch {
+  width: 72px;
+  height: 6px;
+  background: #1a1a1a;
+  border-radius: 99px;
+  margin: 0 auto 10px;
+}
+.phone-screen {
+  background: var(--app-bg);
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 420px;
+}
+
+/* Mock app UI inside phone */
+.mock-header {
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--app-bd);
+}
+.mock-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 9px;
+  color: var(--app-ink2);
+  letter-spacing: .04em;
+  margin-bottom: 2px;
+}
+.mock-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+.mock-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--app-bd);
+}
+.mock-tab {
+  flex: 1;
+  font-size: 10px;
+  text-align: center;
+  padding: 8px 0;
+  color: var(--app-ink2);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.mock-tab.on {
+  color: var(--app-ink);
+  border-bottom: 2px solid var(--app-ink);
+  margin-bottom: -1px;
+}
+.mock-cart {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--app-bg2);
+  border-bottom: 1px solid var(--app-bd);
+}
+.mock-cart-label { font-size: 11px; color: var(--app-ink2); font-family:'Space Grotesk',sans-serif; }
+.mock-cart-btn {
+  background: var(--app-ink);
+  color: var(--app-bg);
+  font-size: 9px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+}
+.mock-section {
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--app-ink2);
+  padding: 10px 14px 4px;
+}
+.mock-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--app-bd);
+}
+.mock-item-name { font-size: 11px; color: var(--app-ink); font-family:'Space Grotesk',sans-serif; }
+.mock-item-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mock-btn {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--app-ink);
+}
+.mock-qty { font-size: 12px; color: var(--app-ink); font-family:'Space Grotesk',sans-serif; font-weight:600; }
+.mock-toggle {
+  display: flex;
+  border-radius: 99px;
+  border: 1px solid var(--app-bd);
+  overflow: hidden;
+}
+.mock-toggle span {
+  font-size: 8px;
+  padding: 2px 6px;
+  color: var(--app-ink2);
+  font-family:'Space Grotesk',sans-serif;
+}
+.mock-toggle span.on {
+  background: var(--app-ink);
+  color: var(--app-bg);
+}
+.mock-add-btn {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  display:flex; align-items:center; justify-content:center;
+  font-size: 16px; color: var(--app-ink);
+}
+
+/* Admin screen - wider */
+.tablet {
+  width: 340px;
+  background: #000;
+  border-radius: 24px;
+  padding: 10px;
+  box-shadow: 0 40px 80px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.tablet-screen {
+  background: var(--app-bg);
+  border-radius: 18px;
+  overflow: hidden;
+  min-height: 460px;
+}
+.mock-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--app-bd);
+}
+.mock-admin-brand { font-family:'Space Grotesk',sans-serif; font-size:10px; color:var(--app-ink); font-weight:600; }
+.mock-tabs-admin { display:flex; border-bottom:1px solid var(--app-bd); }
+.mock-tab-admin {
+  font-size:9px; padding:8px 12px; color:var(--app-ink2);
+  font-family:'Space Grotesk',sans-serif;
+}
+.mock-tab-admin.on { color:var(--app-ink); border-bottom:2px solid var(--app-ink); margin-bottom:-1px; }
+
+.mock-order {
+  margin: 10px 10px 0;
+  background: var(--app-bg2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mock-order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--app-bd);
+}
+.mock-order-num { font-size:10px; font-weight:600; color:var(--app-ink); font-family:'Space Grotesk',sans-serif; }
+.mock-order-meta { font-size:8px; color:var(--app-ink2); margin-top:2px; }
+.mock-order-total { font-size:11px; font-weight:700; color:var(--app-ink); font-family:'Space Grotesk',sans-serif; }
+.mock-order-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:6px 12px; border-bottom:1px solid var(--app-bd); font-size:9px;
+}
+.mock-order-row-name { color:var(--app-ink); font-family:'Space Grotesk',sans-serif; }
+.mock-order-row-qty { color:var(--app-ink2); }
+.mock-order-row-price { color:var(--app-ink); font-weight:600; font-family:'Space Grotesk',sans-serif; }
+.mock-order-row-gl { color:var(--app-ink2); font-size:8px; }
+
+.mock-gl-summary {
+  margin: 10px;
+  background: var(--app-bg2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mock-gl-head { padding:8px 12px; font-size:9px; font-weight:600; color:var(--app-ink); font-family:'Space Grotesk',sans-serif; border-bottom:1px solid var(--app-bd); }
+.mock-gl-row { display:flex; justify-content:space-between; padding:6px 12px; font-size:9px; border-bottom:1px solid var(--app-bd); }
+.mock-gl-code { color:var(--app-ink2); }
+.mock-gl-name { color:var(--app-ink); }
+.mock-gl-val { color:var(--app-ink); font-weight:600; font-family:'Space Grotesk',sans-serif; }
+.mock-gl-grand { display:flex; justify-content:space-between; padding:8px 12px; font-size:10px; font-weight:700; color:var(--app-ink); font-family:'Space Grotesk',sans-serif; background:rgba(255,255,255,.04); }
+
+/* ── HOW IT WORKS ── */
+#how { background: var(--bg); }
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px 40px;
+}
+.how-step {}
+.how-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--border);
+  line-height: 1;
+  margin-bottom: 20px;
+  letter-spacing: -.04em;
+}
+.how-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: -.01em;
+}
+.how-body { font-size: 14px; color: var(--ink2); line-height: 1.7; }
+
+/* ── CONTACT ── */
+#contact { background: var(--surface); }
+.contact-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+.contact-info-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(28px,4vw,40px);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.contact-info-sub {
+  font-size: 16px;
+  color: var(--ink2);
+  line-height: 1.65;
+  margin-bottom: 32px;
+}
+.contact-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+.contact-stat-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  color: var(--accent);
+}
+.contact-stat-label { font-size: 13px; color: var(--ink2); }
+
+.contact-form { display: flex; flex-direction: column; gap: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: .02em;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+  outline: none;
+  transition: border-color .15s;
+  resize: none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.form-submit {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.form-submit:hover { opacity: .8; }
+.form-note { font-size: 12px; color: var(--ink3); text-align: center; }
+#form-success {
+  display: none;
+  background: #eaf3de;
+  border: 1px solid #b0d080;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 14px;
+  color: #2d5a0e;
+  text-align: center;
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--ink);
+  color: rgba(255,255,255,.4);
+  padding: 32px 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.footer-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+.footer-copy { font-size: 13px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .hero { padding: 64px 5% 56px; }
+  .flow-strip { flex-direction: column; gap: 20px; }
+  .flow-step::after { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .screens-wrap { flex-direction: column; align-items: center; }
+  .how-grid { grid-template-columns: 1fr; gap: 36px; }
+  .contact-wrap { grid-template-columns: 1fr; gap: 48px; }
+  .form-row { grid-template-columns: 1fr; }
+  footer { flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="#">Bar<span>Back</span>Flow</a>
+  <a class="nav-cta" href="#contact">Request a Demo</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="section-inner">
+    <div class="hero-eyebrow">Built for food service operations</div>
+    <h1>Every restock <em>logged.</em><br>Every order <em>tracked.</em></h1>
+    <p class="hero-sub">BarBackFlow gives bar teams a fast mobile tool for restocking requests — and gives managers real-time visibility into what's moving, when, and who requested it.</p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#contact">Request a Demo</a>
+      <a class="btn-secondary" href="#how">See how it works</a>
+    </div>
+
+    <!-- FLOW STRIP -->
+    <div class="flow-strip" id="flow">
+      <div class="flow-step active" id="fs-0">
+        <div class="flow-dot">📋</div>
+        <div class="flow-step-label">Staff builds order</div>
+        <div class="flow-step-desc">Mobile-first, takes under a minute</div>
+      </div>
+      <div class="flow-step" id="fs-1">
+        <div class="flow-dot">📤</div>
+        <div class="flow-step-label">Publishes instantly</div>
+        <div class="flow-step-desc">Team gets notified in real time</div>
+      </div>
+      <div class="flow-step" id="fs-2">
+        <div class="flow-dot">✅</div>
+        <div class="flow-step-label">Stock is fulfilled</div>
+        <div class="flow-step-desc">Every item logged as done or out</div>
+      </div>
+      <div class="flow-step" id="fs-3">
+        <div class="flow-dot">📊</div>
+        <div class="flow-step-label">Reports export</div>
+        <div class="flow-step-desc">PDF and CSV with GL codes and totals</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <div class="section-eyebrow">What it does</div>
+    <h2 class="section-title">Designed for the pace<br>of an actual bar shift</h2>
+    <p class="section-sub">No training required. No app to install. Works on any phone, from any browser, on the floor.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">📱</div>
+        <div class="feat-title">Works on any device</div>
+        <p class="feat-body">A Progressive Web App — staff add it to their home screen from Safari or Chrome. No app store, no IT department, no install policy to navigate.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">Orders in under 60 seconds</div>
+        <p class="feat-body">Items are pre-loaded per location. Staff tap to add, set quantity, and publish. The whole restock request takes less time than writing it on a slip of paper.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔔</div>
+        <div class="feat-title">Instant push notifications</div>
+        <p class="feat-body">When an order is published, the whole team gets notified immediately — even with the app closed. No more checking paper logs or missed radio calls.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Admin dashboard with analytics</div>
+        <p class="feat-body">See orders, transfers, and total value by day, week, or month. Top items by volume, and breakdowns by employee — all in the supervisor panel.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🧾</div>
+        <div class="feat-title">GL-coded reports</div>
+        <p class="feat-body">Every item carries a GL code and category. Export PDF or CSV with daily subtotals and GL summaries — ready to drop into your accounting workflow.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔄</div>
+        <div class="feat-title">Transfers between locations</div>
+        <p class="feat-body">Log transfers between any two locations — Coffee Bar, Tea Bar, and satellite units. Every transfer is tracked, attributed, and included in cost reports.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENS -->
+<section id="screens">
+  <div class="section-inner">
+    <div class="section-eyebrow">The product</div>
+    <h2 class="section-title">Two views.<br>One source of truth.</h2>
+    <p class="section-sub">Staff see a fast, clean mobile interface. Managers see a full reporting and management dashboard.</p>
+    <div class="screens-wrap">
+
+      <!-- Staff phone -->
+      <div class="screen-block">
+        <div class="screen-label">Staff — Build Order</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="mock-header">
+              <div class="mock-brand">BarBackFlow</div>
+              <div class="mock-title">Canvas</div>
+            </div>
+            <div class="mock-tabs">
+              <div class="mock-tab on">Build</div>
+              <div class="mock-tab">Active</div>
+              <div class="mock-tab">History</div>
+            </div>
+            <div class="mock-cart">
+              <span class="mock-cart-label">3 items</span>
+              <div class="mock-cart-btn">Publish Order →</div>
+            </div>
+            <div class="mock-section">Milk &amp; Dairy</div>
+            <div class="mock-item">
+              <div class="mock-item-name">Whole Milk</div>
+              <div class="mock-item-ctrl">
+                <div class="mock-btn">−</div>
+                <div class="mock-qty">2</div>
+                <div class="mock-btn">+</div>
+                <div class="mock-toggle"><span>gal</span><span class="on">case</span></div>
+              </div>
+            </div>
+            <div class="mock-item">
+              <div class="mock-item-name">Oat Milk</div>
+              <div class="mock-item-ctrl">
+                <div class="mock-btn">−</div>
+                <div class="mock-qty">1</div>
+                <div class="mock-btn">+</div>
+                <div class="mock-toggle"><span>each</span><span class="on">case</span></div>
+              </div>
+            </div>
+            <div class="mock-item">
+              <div class="mock-item-name">Alm Milk</div>
+              <div class="mock-item-ctrl">
+                <div class="mock-add-btn">+</div>
+              </div>
+            </div>
+            <div class="mock-section">Syrups</div>
+            <div class="mock-item">
+              <div class="mock-item-name">Vanilla</div>
+              <div class="mock-item-ctrl">
+                <div class="mock-btn">−</div>
+                <div class="mock-qty">1</div>
+                <div class="mock-btn">+</div>
+                <div class="mock-toggle"><span class="on">each</span><span>case</span></div>
+              </div>
+            </div>
+            <div class="mock-item">
+              <div class="mock-item-name">Caramel</div>
+              <div class="mock-item-ctrl">
+                <div class="mock-add-btn">+</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin tablet -->
+      <div class="screen-block">
+        <div class="screen-label">Supervisor — Report View</div>
+        <div class="tablet">
+          <div class="tablet-screen">
+            <div class="mock-admin-header">
+              <div class="mock-admin-brand">BarBackFlow · Canvas · Admin</div>
+            </div>
+            <div class="mock-tabs-admin">
+              <div class="mock-tab-admin on">Report</div>
+              <div class="mock-tab-admin">Dashboard</div>
+              <div class="mock-tab-admin">Items</div>
+              <div class="mock-tab-admin">Settings</div>
+            </div>
+            <div style="padding:8px 10px 0;font-size:8px;color:var(--app-ink2);font-family:'Space Grotesk',sans-serif;letter-spacing:.04em">TODAY</div>
+            <div class="mock-order">
+              <div class="mock-order-head">
+                <div>
+                  <div class="mock-order-num">Order #42 · Alex</div>
+                  <div class="mock-order-meta">9:14 AM</div>
+                </div>
+                <div class="mock-order-total">$134.60</div>
+              </div>
+              <div class="mock-order-row">
+                <span class="mock-order-row-name">Whole Milk</span>
+                <span class="mock-order-row-qty">2 case</span>
+                <span class="mock-order-row-price">$86.40</span>
+                <span class="mock-order-row-gl">411048</span>
+              </div>
+              <div class="mock-order-row">
+                <span class="mock-order-row-name">Oat Milk</span>
+                <span class="mock-order-row-qty">1 case</span>
+                <span class="mock-order-row-price">$37.20</span>
+                <span class="mock-order-row-gl">411048</span>
+              </div>
+              <div class="mock-order-row">
+                <span class="mock-order-row-name">Vanilla Syrup</span>
+                <span class="mock-order-row-qty">1 each</span>
+                <span class="mock-order-row-price">$11.00</span>
+                <span class="mock-order-row-gl">411065</span>
+              </div>
+            </div>
+            <div class="mock-gl-summary">
+              <div class="mock-gl-head">GL Code Summary</div>
+              <div class="mock-gl-row">
+                <span class="mock-gl-code">411048</span>
+                <span class="mock-gl-name">Dairy</span>
+                <span class="mock-gl-val">$123.60</span>
+              </div>
+              <div class="mock-gl-row">
+                <span class="mock-gl-code">411065</span>
+                <span class="mock-gl-name">Syrups</span>
+                <span class="mock-gl-val">$11.00</span>
+              </div>
+              <div class="mock-gl-grand">
+                <span>Grand Total</span>
+                <span>$134.60</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-inner">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-title">Up and running<br>in one shift</h2>
+    <p class="section-sub">No complex setup, no migration project. BarBackFlow is live the same day you decide to try it.</p>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-num">01</div>
+        <div class="how-title">We configure your locations and item catalog</div>
+        <p class="how-body">Your bar's products, GL codes, and unit pricing are loaded in before day one. Staff never see cost data — only the items they need to request.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">02</div>
+        <div class="how-title">Staff open the link, add their name, and start ordering</div>
+        <p class="how-body">No account creation, no passwords. Staff bookmark the URL or add it to their home screen. First restock order goes out in minutes.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">03</div>
+        <div class="how-title">Supervisors log in and see everything</div>
+        <p class="how-body">The admin panel shows live orders, historical reports, GL summaries, and employee-level breakdowns. Export to PDF or CSV on demand.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-inner">
+    <div class="contact-wrap">
+      <div>
+        <div class="section-eyebrow">Get in touch</div>
+        <div class="contact-info-title">See it running in your operation</div>
+        <p class="contact-info-sub">BarBackFlow is currently live at multiple Eurest/Compass Group locations. Tell us about your operation and we'll set up a demo with real data from your unit.</p>
+        <div class="contact-stat">
+          <div class="contact-stat-num">2 min</div>
+          <div class="contact-stat-label">Average time to publish a restock order</div>
+        </div>
+        <div class="contact-stat">
+          <div class="contact-stat-num">100%</div>
+          <div class="contact-stat-label">Orders tracked with employee attribution</div>
+        </div>
+        <div class="contact-stat">
+          <div class="contact-stat-num">0</div>
+          <div class="contact-stat-label">Apps to install — works in any mobile browser</div>
+        </div>
+      </div>
+      <div>
+        <form class="contact-form" id="contact-form" onsubmit="submitForm(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>First name</label>
+              <input type="text" placeholder="Alex" required>
+            </div>
+            <div class="form-group">
+              <label>Last name</label>
+              <input type="text" placeholder="Johnson" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Work email</label>
+            <input type="email" placeholder="you@compass-usa.com" required>
+          </div>
+          <div class="form-group">
+            <label>Job title</label>
+            <input type="text" placeholder="District Manager">
+          </div>
+          <div class="form-group">
+            <label>Number of bar locations</label>
+            <select>
+              <option value="">Select…</option>
+              <option>1–2</option>
+              <option>3–5</option>
+              <option>6–10</option>
+              <option>10+</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tell us about your operation</label>
+            <textarea rows="4" placeholder="Location, current tracking method, main challenges…"></textarea>
+          </div>
+          <button type="submit" class="form-submit">Send message</button>
+          <div class="form-note">We'll get back within one business day.</div>
+          <div id="form-success">Thank you — we'll be in touch shortly.</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">BarBackFlow</div>
+  <div class="footer-copy">© 2026 Artifiqa Inc. · All rights reserved</div>
+</footer>
+
+<script>
+// Flow strip animation
+const steps = document.querySelectorAll('.flow-step');
+let current = 0;
+setInterval(()=>{
+  steps[current].classList.remove('active');
+  current = (current + 1) % steps.length;
+  steps[current].classList.add('active');
+}, 1800);
+
+// Form submit (placeholder — replace with Formspree or similar)
+function submitForm(e){
+  e.preventDefault();
+  document.getElementById('contact-form').style.display = 'none';
+  document.getElementById('form-success').style.display = 'block';
+}
+</script>
+
+</body>
+</html>
